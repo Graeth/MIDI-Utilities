@@ -13,6 +13,8 @@ public class Beat {
     // The current beat type for an external player
     beatTypes currentBeat = beatTypes.NORMAL;
 
+    String name = "untitled";
+
     public boolean triggered = false;
     /*
     * @var bpm - current beats per minute of metronome
@@ -23,7 +25,16 @@ public class Beat {
     * @var beatNote - the note that is played by the metronome
     * @var uniqueMeasures - amount of different measure types specified in configuration
     * */
-    public int bpm = 0, timeSigUpper = 0, timeSigLower = 0, acceleration = 0, iteration = 0, beatNote = Octave.O4+Note.C, uniqueMeasures = 1;
+    public int bpm = 0;
+    public int timeSigUpper = 0;
+    public int timeSigLower = 4;
+
+
+
+    public int acceleration = 0;
+    public int iteration = 0;
+    public int beatNote = Octave.O4+Note.C;
+    public int uniqueMeasures = 1;
 
     public int accentedBeatDynamic = 60, normalBeatDynamic = 30, silentBeatDynamic = 0;
     /*
@@ -95,6 +106,7 @@ public class Beat {
         }
         timeSigUpper = (k+1)/uniqueMeasures;
         listTimeSignature();
+        System.out.println(rhythm);
         // don't get that stank
     }
     //starts playing the metronome
@@ -114,10 +126,7 @@ public class Beat {
     public void setTimeSigUpper(int timeSigUpper) {
         this.timeSigUpper = timeSigUpper;
     }
-    // Mutes a certain beat in the measure
-    public void muteBeat(int beat) {
-        muteBehavior.set(beat, true);
-    }
+
 
     /*
     does some quick maff to determine what beattime and beatdelay should be. Call this whenever bpm is changed.
@@ -129,28 +138,21 @@ public class Beat {
         silenceAfterBeat = (int) ((beatTime*silencePercentage));
     }
 
-    // populates the arrays so that muteMeasure and muteBeat can use set method instead of add, call this when a new format is given by using # of ,
-//    public void populate(int uniqueMeasures) {
-//        initialize();
-//        IsAccented.clear();
-//        muteBehavior.clear();
-//        for(int i = 0; i < uniqueMeasures*timeSigUpper; i++) {
-//            muteBehavior.add(false);
-//            if(i%timeSigUpper == 0) IsAccented.add(true);
-//            else IsAccented.add(false);
-//        }
-//        listTimeSignature();
-//    }
     public beatTypes getCurrentBeat() throws Exception {
+        System.out.println(name);
         if(triggered) {
             triggered = false;
             Thread.sleep(beatDelay);
+            System.out.println("DELAY_SILENCE");
             return beatTypes.SILENT;
         } else {
             Thread.sleep(silenceAfterBeat);
             triggered = true;
         }
-        if(iteration >= timeSigUpper*uniqueMeasures) iteration = 0;
+        if(iteration >= timeSigUpper*uniqueMeasures) {
+            iteration = 0;
+            setBpm(bpm+acceleration);
+        }
             if (muteBehavior.get(iteration)) {
                 iteration++;
                 return beatTypes.SILENT;
@@ -187,23 +189,25 @@ public class Beat {
         Thread.sleep(silenceAfterBeat);
         iteration++;
     }
-    //Mutes a certain measure
-    public void muteMeasure(int measure) {
-        for(int j = 0; j < measure; j++) {
-            for (int i = 0; i < timeSigUpper; i++) {
-                if(j==measure) {
-                    muteBehavior.set(j*timeSigUpper+i, true);
-                }
-            }
+
+    public void loadRhythm(BeatFormat bf) {
+        setBpm(bf.getBpm());
+        setAcceleration(bf.getAcceleration());
+        this.name = bf.getName();
+        beatSetup(bf.getFormat());
+    }
+
+    public String[] getTypeNames() {
+        int formatSize = Constants.workingFormats.length;
+        String[] names = new String[formatSize];
+        for(int i = 0; i < formatSize; i++)
+        {
+            names[i] = Constants.workingFormats[i].getName();
         }
+        return names;
     }
-
-    public void setAccent(boolean isAccent, int beat) {
-        IsAccented.set(beat, isAccent);
+    public void setAcceleration(int acceleration) {
+        System.out.println("Acceleration is " + acceleration + " beats per measure");
+        this.acceleration = acceleration;
     }
-    public void setAccent(int beat) {
-        IsAccented.set(beat, true);
-    }
-
-
 }
